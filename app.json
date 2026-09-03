@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Purrtate",
+    "slug": "purrtate",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "purrtate",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.purrtate.den",
+      "infoPlist": {
+        "NSUserNotificationsUsageDescription": "Purrtate can nudge you on this phone when a toy basket is due to rotate."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F3E6D4",
+        "foregroundImage": "./assets/images/icon.png"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#F3E6D4"
+        }
+      ],
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "color": "#D4654A"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

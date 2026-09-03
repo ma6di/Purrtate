@@ -1,0 +1,242 @@
+{
+  ".claude/settings.json": {
+    "mtime": 1788077294.0,
+    "ast_hash": "dc580fca35a0e98ed20777ede5e545a1",
+    "semantic_hash": ""
+  },
+  ".vscode/extensions.json": {
+    "mtime": 1788077255.0,
+    "ast_hash": "b2354ba0225f5689d13651ec0fac0de0",
+    "semantic_hash": ""
+  },
+  ".vscode/settings.json": {
+    "mtime": 1788077255.0,
+    "ast_hash": "6b9302c1f72c315e90233c7539c48c9f",
+    "semantic_hash": ""
+  },
+  "app.json": {
+    "mtime": 1788078097.1199884,
+    "ast_hash": "0654bab313b180625693b57379b67b60",
+    "semantic_hash": ""
+  },
+  "app/(tabs)/_layout.tsx": {
+    "mtime": 1788078266.8580697,
+    "ast_hash": "ce55df3c4d33e2fa110778a99a0cf6ec",
+    "semantic_hash": ""
+  },
+  "app/(tabs)/index.tsx": {
+    "mtime": 1788078515.2891657,
+    "ast_hash": "3a164a5886752b20364049bcf8253ba5",
+    "semantic_hash": ""
+  },
+  "app/(tabs)/insights.tsx": {
+    "mtime": 1788078029.1271553,
+    "ast_hash": "cf65e6890b6527f3d651574ffeaa158a",
+    "semantic_hash": ""
+  },
+  "app/(tabs)/play.tsx": {
+    "mtime": 1788078286.8428442,
+    "ast_hash": "d02956e87f13da121503c396086b01e1",
+    "semantic_hash": ""
+  },
+  "app/(tabs)/toys.tsx": {
+    "mtime": 1788078161.9246597,
+    "ast_hash": "f6d769e8a7800dcd5ddaaf2783ec46aa",
+    "semantic_hash": ""
+  },
+  "app/+html.tsx": {
+    "mtime": 1788078097.0487309,
+    "ast_hash": "66cf1409df6fe55daf244185854bf018",
+    "semantic_hash": ""
+  },
+  "app/+not-found.tsx": {
+    "mtime": 1788078192.379518,
+    "ast_hash": "fc4b3dd3f83150480d1f0822aed1c2ae",
+    "semantic_hash": ""
+  },
+  "app/_layout.tsx": {
+    "mtime": 1788078188.6912334,
+    "ast_hash": "2a0b27642566461dfb092e9c93293d99",
+    "semantic_hash": ""
+  },
+  "app/index.tsx": {
+    "mtime": 1788077966.4936233,
+    "ast_hash": "29ed114ea8a11d323a690bda2e5dc324",
+    "semantic_hash": ""
+  },
+  "app/onboarding.tsx": {
+    "mtime": 1788077968.8225622,
+    "ast_hash": "114f47f259d62869b6687b55ffb75cd7",
+    "semantic_hash": ""
+  },
+  "app/settings.tsx": {
+    "mtime": 1788078090.2525718,
+    "ast_hash": "7c5999c3ad36a2d76afd7977ebfbd07a",
+    "semantic_hash": ""
+  },
+  "app/toy/[id].tsx": {
+    "mtime": 1788078205.2831535,
+    "ast_hash": "48337f1d3ff989d2f3a863de5da66449",
+    "semantic_hash": ""
+  },
+  "app/toy/_layout.tsx": {
+    "mtime": 1788078157.4003797,
+    "ast_hash": "d1d55c1c1da4403597c9c8ed887c0660",
+    "semantic_hash": ""
+  },
+  "app/toy/new.tsx": {
+    "mtime": 1788078069.5895383,
+    "ast_hash": "069686f20ba53caea98c5829cdbb8e72",
+    "semantic_hash": ""
+  },
+  "components/GroupTimeline.tsx": {
+    "mtime": 1788077808.390418,
+    "ast_hash": "d9de0f6d202349d3f46b2e7da9584036",
+    "semantic_hash": ""
+  },
+  "components/PlayRing.tsx": {
+    "mtime": 1788078160.9389439,
+    "ast_hash": "c4a3756397d4c693a47ada6a0b69d45b",
+    "semantic_hash": ""
+  },
+  "components/PurrTabBar.tsx": {
+    "mtime": 1788078266.8182118,
+    "ast_hash": "c7e3b248ebf9d5d64705d6a2f5ae3670",
+    "semantic_hash": ""
+  },
+  "components/Sparkline.tsx": {
+    "mtime": 1788077796.8529654,
+    "ast_hash": "273f76011e6996fc8947fce0f35ea854",
+    "semantic_hash": ""
+  },
+  "components/ToyCard.tsx": {
+    "mtime": 1788077781.909524,
+    "ast_hash": "d0c1d8c295dc9b65b21d488e871f0c5b",
+    "semantic_hash": ""
+  },
+  "components/icons/CatLogo.tsx": {
+    "mtime": 1788077724.234267,
+    "ast_hash": "305db05222019d97583fd04d79d262ac",
+    "semantic_hash": ""
+  },
+  "components/icons/TabIcons.tsx": {
+    "mtime": 1788077744.2432575,
+    "ast_hash": "4b96f1c3b7a4badcd1a3d4de0dfb1b0c",
+    "semantic_hash": ""
+  },
+  "components/icons/ToyGlyph.tsx": {
+    "mtime": 1788078164.5236127,
+    "ast_hash": "6685977af95480e83831d18239aa88ac",
+    "semantic_hash": ""
+  },
+  "components/ui/PawButton.tsx": {
+    "mtime": 1788078163.3328078,
+    "ast_hash": "29b551d9d843cdeb1f4406a71c37af20",
+    "semantic_hash": ""
+  },
+  "components/ui/Screen.tsx": {
+    "mtime": 1788077760.866659,
+    "ast_hash": "1d840bcc1c23f074d6ff1e8e40f5d224",
+    "semantic_hash": ""
+  },
+  "components/ui/Type.tsx": {
+    "mtime": 1788077760.8107593,
+    "ast_hash": "9053dabcae0a6c18f53c740151f71cce",
+    "semantic_hash": ""
+  },
+  "lib/dates.ts": {
+    "mtime": 1788077615.67255,
+    "ast_hash": "4883e4411a7a2bdb7732118ba20e273c",
+    "semantic_hash": ""
+  },
+  "lib/haptics.ts": {
+    "mtime": 1788077625.016055,
+    "ast_hash": "e075d9703742112f2c75cb778cb91aaf",
+    "semantic_hash": ""
+  },
+  "lib/ids.ts": {
+    "mtime": 1788077613.626678,
+    "ast_hash": "1fb246ad29901062db30cf684af68e05",
+    "semantic_hash": ""
+  },
+  "lib/presets.ts": {
+    "mtime": 1788077625.0160313,
+    "ast_hash": "476719bd90220391ab5f61cd6e5b4b91",
+    "semantic_hash": ""
+  },
+  "lib/reminders.ts": {
+    "mtime": 1788078397.5609047,
+    "ast_hash": "1b603434292bf2faf42afa30e473b567",
+    "semantic_hash": ""
+  },
+  "lib/rotation.ts": {
+    "mtime": 1788078516.833161,
+    "ast_hash": "eb6a4675d79e0028cbed421d5c2e0dcf",
+    "semantic_hash": ""
+  },
+  "package.json": {
+    "mtime": 1788078129.9675698,
+    "ast_hash": "2972bf2a22419ff6dbbdd093609317bb",
+    "semantic_hash": ""
+  },
+  "store/useAppStore.ts": {
+    "mtime": 1788078524.2720113,
+    "ast_hash": "405d12dac5fd9567658d1d5a9921fbed",
+    "semantic_hash": ""
+  },
+  "theme/index.ts": {
+    "mtime": 1788077606.882059,
+    "ast_hash": "ca92533c06d1634de6d498b3d3c63493",
+    "semantic_hash": ""
+  },
+  "tsconfig.json": {
+    "mtime": 1788077255.0,
+    "ast_hash": "54dc64d62868350b1d819e47e2ac8e9a",
+    "semantic_hash": ""
+  },
+  "types/models.ts": {
+    "mtime": 1788077607.7730324,
+    "ast_hash": "8ad2446b16c7d68c94a0828c7c19c194",
+    "semantic_hash": ""
+  },
+  "AGENTS.md": {
+    "mtime": 1788077294.0,
+    "ast_hash": "963888ec05f17b13375386f058dd621e",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1788077294.0,
+    "ast_hash": "5c27369b226fcf2be8a6cfe52224e767",
+    "semantic_hash": ""
+  },
+  "assets/images/android-icon-background.png": {
+    "mtime": 1788077255.0,
+    "ast_hash": "2d65569cc0e2afdcea0af9f9902d4173",
+    "semantic_hash": ""
+  },
+  "assets/images/android-icon-foreground.png": {
+    "mtime": 1788077512.6418166,
+    "ast_hash": "68f64d0936746752afc100087df000e4",
+    "semantic_hash": ""
+  },
+  "assets/images/android-icon-monochrome.png": {
+    "mtime": 1788077255.0,
+    "ast_hash": "1e097dab989759fc0b69440092ca22cd",
+    "semantic_hash": ""
+  },
+  "assets/images/favicon.png": {
+    "mtime": 1788077512.6386294,
+    "ast_hash": "68f64d0936746752afc100087df000e4",
+    "semantic_hash": ""
+  },
+  "assets/images/icon.png": {
+    "mtime": 1788077512.6316783,
+    "ast_hash": "68f64d0936746752afc100087df000e4",
+    "semantic_hash": ""
+  },
+  "assets/images/splash-icon.png": {
+    "mtime": 1788077512.6353617,
+    "ast_hash": "e2313e60c42e1936c7d4c6211a4ac465",
+    "semantic_hash": ""
+  }
+}
