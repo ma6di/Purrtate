@@ -2,7 +2,7 @@
 App Store screenshots for Purrtate.
 
 Puts each screenshot from appstore/source/ into an iPhone frame with a
-headline, at 1320 x 2868 (6.9" display, the size App Store Connect requires).
+headline, at 1320 x 2868 (6.9") and 1206 x 2622 (6.3"), the sizes App Store Connect asks for.
 Replace a source PNG or edit SHOTS, then run again:
 
     python3 appstore/make_screenshots.py
@@ -156,17 +156,27 @@ def render(src: str, bg, plain: str, highlight: str, sub: str) -> Image.Image:
     return img
 
 
+# App Store Connect slots: 6.9" (1320 x 2868) and 6.3" (1206 x 2622).
+SIZES = {"6.9in": (1320, 2868), "6.3in": (1206, 2622)}
+
+
 def main() -> None:
-    OUT.mkdir(exist_ok=True)
+    for folder in SIZES:
+        (OUT / folder).mkdir(parents=True, exist_ok=True)
+        for old in (OUT / folder).glob("*.png"):
+            old.unlink()
     for old in OUT.glob("*.png"):
         old.unlink()
     for i, (src, bg, plain, highlight, sub) in enumerate(SHOTS, start=1):
         if not (SRC / src).exists():
             print(f"skip {src} (missing)")
             continue
-        out = OUT / f"{i:02d}-{Path(src).stem}.png"
-        render(src, bg, plain, highlight, sub).save(out, optimize=True)
-        print(out.relative_to(PROJECT))
+        img = render(src, bg, plain, highlight, sub)
+        name = f"{i:02d}-{Path(src).stem}.png"
+        for folder, size in SIZES.items():
+            out = OUT / folder / name
+            (img if img.size == size else img.resize(size, Image.LANCZOS)).save(out, optimize=True)
+            print(out.relative_to(PROJECT))
 
 
 if __name__ == "__main__":
