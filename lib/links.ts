@@ -7,3 +7,5 @@ export const LINKS = {
   support: `${SITE}/support.html`,
   impressum: `${SITE}/impressum.html`,
 } as const;
+
+export const SUPPORT_EMAIL = 'mahdi.cheraghali+purrtate@gmail.com';

@@ -6,7 +6,7 @@ import { NewToyCard } from '@/components/NewToyCard';
 import { ToyCard } from '@/components/ToyCard';
 import { YarnMark } from '@/components/icons/CatLogo';
 import { Screen } from '@/components/ui/Screen';
-import { Chip, IconButton, PawButton } from '@/components/ui/PawButton';
+import { IconButton, PawButton } from '@/components/ui/PawButton';
 import { Body, Display, EarCard, Label } from '@/components/ui/Type';
 import { success, warning } from '@/lib/haptics';
 import { syncReminders } from '@/lib/reminders';
@@ -22,8 +22,6 @@ export default function TodayScreen() {
   const router = useRouter();
   const household = useHousehold();
   const rotate = useAppStore((s) => s.rotate);
-  const cats = useAppStore((s) => s.cats);
-  const switchCat = useAppStore((s) => s.switchCat);
   const remindersOn = useAppStore((s) => s.settings.remindersOn);
   const updateSettings = useAppStore((s) => s.updateSettings);
 
@@ -69,14 +67,6 @@ export default function TodayScreen() {
           <YarnMark size={20} color={colors.ink} />
         </IconButton>
       </View>
-
-      {cats.length > 1 && (
-        <View style={styles.cats}>
-          {cats.map((c) => (
-            <Chip key={c.id} label={c.name} selected={c.id === cat.id} onPress={() => switchCat(c.id)} />
-          ))}
-        </View>
-      )}
 
       <EarCard>
         <Label>Out now</Label>
@@ -188,7 +178,6 @@ export default function TodayScreen() {
 
 const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'flex-start', marginTop: 6, marginBottom: 12 },
-  cats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   basketName: { marginTop: 2 },
   status: { marginTop: 6, fontFamily: fonts.bodyBold, color: colors.inkSoft },
   statusDue: { color: colors.terracottaDeep },

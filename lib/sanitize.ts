@@ -17,7 +17,6 @@ import type {
 export const MAX_NAME = 40;
 export const MAX_NOTES = 500;
 const MAX_TOYS = 300;
-const MAX_CATS = 10;
 
 const KINDS = new Set<string>(TOY_KINDS.map((k) => k.kind));
 const COLORS = new Set<string>(TOY_COLORS.map((c) => c.hex));
@@ -135,7 +134,9 @@ export function sanitizeState(raw: unknown): PersistedState {
       createdAt: cleanDate(c.createdAt) ?? now,
     }))
     .filter((c) => c.id)
-    .slice(0, MAX_CATS);
+    // One household, one schedule. Older versions allowed several cats: keep the active one.
+    .sort((a, b) => (a.id === raw.activeCatId ? -1 : b.id === raw.activeCatId ? 1 : 0))
+    .slice(0, 1);
   const catIds = new Set(cats.map((c) => c.id));
 
   const groups: Group[] = (Array.isArray(raw.groups) ? raw.groups : [])

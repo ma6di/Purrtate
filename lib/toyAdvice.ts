@@ -121,7 +121,7 @@ export function newToyNudge(household: Household, at = new Date()): NewToyNudge 
  * Collection-wide advice. Basket-level problems are shown on each basket instead.
  */
 export function toySuggestions(household: Household, at = new Date()): ToySuggestion[] {
-  const { cat, groups, toys } = household;
+  const { groups, toys } = household;
   const live = toys.filter((t) => t.status !== 'retired');
   const out: ToySuggestion[] = [];
 
@@ -141,7 +141,7 @@ export function toySuggestions(household: Household, at = new Date()): ToySugges
       id: 'no-chase',
       kind: 'buy',
       title: 'Worth buying: a feather wand',
-      body: `Cats play longest when a person moves a feather wand. ${cat.name} has nothing to chase through the air yet.`,
+      body: `Cats play longest when a person moves a feather wand. There’s nothing to chase through the air yet.`,
     });
   }
   if (mix.missing.includes('stalk')) {

@@ -84,4 +84,24 @@ describe('sanitizeState', () => {
     });
     expect(s.activeCatId).toBe('c1');
   });
+  it('keeps one household from old multi-cat data: the active cat and its toys', () => {
+    const s = sanitizeState({
+      cats: [
+        { id: 'c1', name: 'Mochi', energy: 'adult' },
+        { id: 'c2', name: 'Bean', energy: 'kitten' },
+      ],
+      groups: [
+        { id: 'g1', catId: 'c1', name: 'A' },
+        { id: 'g2', catId: 'c2', name: 'A' },
+      ],
+      toys: [
+        { id: 't1', catId: 'c1', groupId: 'g1', name: 'Mouse', kind: 'mouse', status: 'active' },
+        { id: 't2', catId: 'c2', groupId: 'g2', name: 'Ball', kind: 'ball', status: 'active' },
+      ],
+      activeCatId: 'c2',
+    });
+    expect(s.cats.map((c) => c.name)).toEqual(['Bean']);
+    expect(s.toys.map((t) => t.id)).toEqual(['t2']);
+    expect(s.activeCatId).toBe('c2');
+  });
 });

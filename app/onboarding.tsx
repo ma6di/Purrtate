@@ -83,12 +83,13 @@ export default function Onboarding() {
 
       {step === 1 && (
         <View style={styles.block}>
-          <Title>What’s their name?</Title>
+          <Title>Who are the toys for?</Title>
+          <Body>One cat or a few. Cats in the same home share the toys, so they share the baskets too.</Body>
           <TextInput
             value={name}
             onChangeText={setName}
             maxLength={MAX_NAME}
-            placeholder="Mochi, Bean, Pip…"
+            placeholder="Mochi, or Mochi & Bean"
             placeholderTextColor={colors.whisker}
             style={styles.input}
             autoFocus
@@ -102,7 +103,7 @@ export default function Onboarding() {
       {step === 2 && (
         <View style={styles.block}>
           <Title>How wild is the hunt?</Title>
-          <Body>This picks a starting swap interval. It’s a suggestion, not a rule, and you can change it any time in Settings.</Body>
+          <Body>Several cats? Pick the most playful one. This picks a starting swap interval. It’s a suggestion, not a rule, and you can change it any time in Settings.</Body>
           <View style={styles.grid}>
             {ENERGIES.map((e) => (
               <Pressable

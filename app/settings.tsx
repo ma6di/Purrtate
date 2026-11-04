@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Alert, Linking, Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
@@ -9,7 +8,7 @@ import { Screen } from '@/components/ui/Screen';
 import { PawButton } from '@/components/ui/PawButton';
 import { Body, Display, Label, Title, Whisker } from '@/components/ui/Type';
 import { tap } from '@/lib/haptics';
-import { LINKS } from '@/lib/links';
+import { LINKS, SUPPORT_EMAIL } from '@/lib/links';
 import { ENERGY_PRESETS, SWAP_OPTIONS } from '@/lib/presets';
 import { intervalDays } from '@/lib/rotation';
 import { askNotificationPermission } from '@/lib/reminders';
@@ -21,14 +20,10 @@ import { MAX_NAME, cleanName } from '@/lib/sanitize';
 export default function SettingsScreen() {
   const router = useRouter();
   const cat = useActiveCat();
-  const cats = useAppStore((s) => s.cats);
   const settings = useAppStore((s) => s.settings);
   const updateCat = useAppStore((s) => s.updateCat);
-  const addCat = useAppStore((s) => s.addCat);
-  const switchCat = useAppStore((s) => s.switchCat);
   const updateSettings = useAppStore((s) => s.updateSettings);
   const resetAll = useAppStore((s) => s.resetAll);
-  const [extraName, setExtraName] = useState('');
 
   if (!cat) return null;
   const interval = intervalDays(cat.energy, settings.rotationIntervalDays);
@@ -44,8 +39,10 @@ export default function SettingsScreen() {
         <Body>Keep toys feeling new.</Body>
       </View>
 
-      <Label>This cat</Label>
+      <Label>Your cat or cats</Label>
       <TextInput
+        placeholder="Mochi, or Mochi & Bean"
+        placeholderTextColor={colors.whisker}
         value={cat.name}
         onChangeText={(name) => updateCat(cat.id, { name })}
         onEndEditing={() => updateCat(cat.id, { name: cleanName(cat.name, 'Kitty') })}
@@ -95,44 +92,6 @@ export default function SettingsScreen() {
         they ignore the toys before the swap, pick fewer days. If they still play hard on swap day, pick more.
       </Body>
 
-      {cats.length > 1 && (
-        <>
-          <Label>Switch cat</Label>
-          <View style={styles.grid}>
-            {cats.map((c) => (
-              <Pressable
-                key={c.id}
-                onPress={() => {
-                  tap();
-                  switchCat(c.id);
-                }}
-                style={[styles.energy, c.id === cat.id && styles.on]}>
-                <Body style={styles.eLabel}>{c.name}</Body>
-              </Pressable>
-            ))}
-          </View>
-        </>
-      )}
-
-      <Label>Another cat in the house?</Label>
-      <TextInput
-        value={extraName}
-        onChangeText={setExtraName}
-        maxLength={MAX_NAME}
-        placeholder="Name"
-        placeholderTextColor={colors.whisker}
-        style={styles.input}
-      />
-      <PawButton
-        label="Add cat"
-        variant="ghost"
-        onPress={() => {
-          if (!extraName.trim()) return;
-          addCat(extraName.trim(), 'adult');
-          setExtraName('');
-        }}
-      />
-
       <Whisker />
 
       <View style={styles.row}>
@@ -170,6 +129,7 @@ export default function SettingsScreen() {
           [
             ['Privacy policy', LINKS.privacy],
             ['Support', LINKS.support],
+            ['Email support', `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Purrtate support')}`],
             ['Terms of use', LINKS.terms],
             ['Impressum', LINKS.impressum],
           ] as const
@@ -194,7 +154,7 @@ export default function SettingsScreen() {
         paw={false}
         style={{ marginTop: 24 }}
         onPress={() => {
-          Alert.alert('Clear everything?', 'Toys, baskets and cats on this phone will be erased.', [
+          Alert.alert('Clear everything?', 'All toys, baskets and settings on this phone will be erased.', [
             { text: 'Keep' },
             {
               text: 'Reset',

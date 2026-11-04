@@ -36,9 +36,7 @@ type AppState = PersistedState & {
   _hasHydrated: boolean;
   setHasHydrated: (v: boolean) => void;
   completeOnboarding: (input: OnboardingInput) => void;
-  addCat: (name: string, energy: Energy) => void;
   updateCat: (id: string, patch: Partial<Pick<Cat, 'name' | 'energy'>>) => void;
-  switchCat: (id: string) => void;
   addToy: (input: { name: string; kind: ToyKind; groupId?: string; notes?: string; color?: string }) => void;
   updateToy: (id: string, patch: Partial<Pick<Toy, 'name' | 'kind' | 'groupId' | 'notes' | 'color'>>) => void;
   setToyStatus: (id: string, status: ToyStatus) => void;
@@ -125,16 +123,6 @@ export const useAppStore = create<AppState>()(
         });
       },
 
-      addCat: (name, energy) => {
-        if (get().cats.length >= 10) return;
-        const catId = uid('cat');
-        set((s) => ({
-          cats: [...s.cats, { id: catId, name: cleanName(name, 'Kitty'), energy: cleanEnergy(energy), createdAt: nowIso() }],
-          groups: [...s.groups, ...makeGroups(catId)],
-          activeCatId: catId,
-        }));
-      },
-
       updateCat: (id, patch) =>
         set((s) => ({
           cats: s.cats.map((c) =>
@@ -148,10 +136,6 @@ export const useAppStore = create<AppState>()(
               : c
           ),
         })),
-
-      switchCat: (id) => {
-        if (get().cats.some((c) => c.id === id)) set({ activeCatId: id });
-      },
 
       addToy: ({ name, kind, groupId, notes, color }) => {
         const s = get();

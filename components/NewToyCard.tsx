@@ -23,7 +23,7 @@ export function NewToyCard({ household }: { household: Household }) {
   return (
     <View style={styles.card}>
       <Label style={{ color: colors.terracottaDeep }}>New toy time</Label>
-      <Title style={styles.title}>Something {household.cat.name} has never seen</Title>
+      <Title style={styles.title}>Something new for {household.cat.name}</Title>
       <Body style={styles.body}>
         It’s been about {weeks} week{weeks === 1 ? '' : 's'} since a new toy joined. Rotation keeps toys fresh for a
         while, but a new texture, sound or prey shape works best of all. It doesn’t have to cost much: a paper bag, a
