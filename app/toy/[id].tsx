@@ -3,8 +3,10 @@ import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ToyGlyph } from '@/components/icons/ToyGlyph';
+import { ColorRow } from '@/components/ToyPickers';
+import { BackButton } from '@/components/ui/BackButton';
 import { Screen } from '@/components/ui/Screen';
-import { IconButton, PawButton } from '@/components/ui/PawButton';
+import { PawButton } from '@/components/ui/PawButton';
 import { Body, Display, Label, Title } from '@/components/ui/Type';
 import { formatMinutes } from '@/lib/dates';
 import { tap } from '@/lib/haptics';
@@ -54,9 +56,7 @@ export default function ToyDetailScreen() {
   return (
     <Screen scroll>
       <View style={styles.top}>
-        <IconButton onPress={() => router.back()}>
-          <Body style={{ color: colors.ink }}>←</Body>
-        </IconButton>
+        <BackButton />
       </View>
 
       <View style={styles.hero}>
@@ -89,6 +89,11 @@ export default function ToyDetailScreen() {
             <ToyGlyph kind={k.kind} size={22} />
           </Pressable>
         ))}
+      </View>
+
+      <Label>Colour</Label>
+      <View style={{ marginVertical: 12 }}>
+        <ColorRow value={toy.color} onChange={(color) => updateToy(toy.id, { color })} />
       </View>
 
       <Label>Basket</Label>
@@ -126,6 +131,10 @@ export default function ToyDetailScreen() {
         </Body>
       ))}
 
+      <Body style={styles.worn}>
+        Frayed string, loose feathers or a split seam? Retire it. Swallowed string or small parts need a vet the same day.
+      </Body>
+
       <PawButton
         label="Forget this toy"
         variant="ghost"
@@ -158,6 +167,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  worn: { fontSize: 13, marginTop: 18, marginBottom: 12 },
   top: { marginBottom: 8 },
   hero: { alignItems: 'center', gap: 8, marginBottom: 16 },
   glyph: {

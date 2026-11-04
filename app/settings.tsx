@@ -3,8 +3,9 @@ import { Alert, Pressable, StyleSheet, Switch, TextInput, View } from 'react-nat
 import { useRouter } from 'expo-router';
 
 import { CatLogo } from '@/components/icons/CatLogo';
+import { BackButton } from '@/components/ui/BackButton';
 import { Screen } from '@/components/ui/Screen';
-import { IconButton, PawButton } from '@/components/ui/PawButton';
+import { PawButton } from '@/components/ui/PawButton';
 import { Body, Display, Label, Title, Whisker } from '@/components/ui/Type';
 import { tap } from '@/lib/haptics';
 import { ENERGY_PRESETS } from '@/lib/presets';
@@ -29,9 +30,7 @@ export default function SettingsScreen() {
   return (
     <Screen scroll>
       <View style={styles.top}>
-        <IconButton onPress={() => router.back()}>
-          <Body style={{ color: colors.ink }}>←</Body>
-        </IconButton>
+        <BackButton />
       </View>
       <View style={styles.hero}>
         <CatLogo size={80} />

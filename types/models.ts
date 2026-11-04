@@ -11,6 +11,9 @@ export type ToyKind =
   | 'laser'
   | 'plush';
 
+/** What part of the hunt a toy feeds. A good basket has one of each. */
+export type PlayRole = 'chase' | 'stalk' | 'grab';
+
 export type ToyStatus = 'active' | 'resting' | 'retired';
 
 export type Cat = {
@@ -32,6 +35,8 @@ export type Toy = {
   groupId: string;
   name: string;
   kind: ToyKind;
+  /** Optional swatch so owners can tell "red mouse" from "grey mouse". */
+  color?: string;
   status: ToyStatus;
   notes: string;
   createdAt: string;

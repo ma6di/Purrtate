@@ -1,14 +1,19 @@
-import { ReactNode } from 'react';
-import {
-  Platform,
-  ScrollView,
-  StyleSheet,
-  View,
-  ViewStyle,
-} from 'react-native';
+import { createContext, ReactNode, useCallback, useContext, useMemo, useRef } from 'react';
+import { Keyboard, Platform, ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors } from '@/theme';
+
+type ScrollCtx = {
+  /** Scroll so `target` sits near the top of the screen, above the keyboard. */
+  scrollIntoView: (target: View | null, gap?: number) => void;
+};
+
+const ScreenScroll = createContext<ScrollCtx>({ scrollIntoView: () => {} });
+
+export function useScreenScroll() {
+  return useContext(ScreenScroll);
+}
 
 export function Screen({
   children,
@@ -21,22 +26,56 @@ export function Screen({
   style?: ViewStyle;
   padded?: boolean;
 }) {
+  const scrollRef = useRef<ScrollView>(null);
+  const contentRef = useRef<View>(null);
+
+  const scrollIntoView = useCallback((target: View | null, gap = 12) => {
+    const content = contentRef.current;
+    if (!target || !content) return;
+    const run = () =>
+      target.measureLayout(
+        content,
+        (_x, y) =>
+          scrollRef.current?.scrollTo({
+            y: Math.max(0, y - gap),
+            animated: true,
+          }),
+        () => {},
+      );
+    // Run now, and again once the keyboard has finished moving so insets are final.
+    requestAnimationFrame(run);
+    const sub = Keyboard.addListener('keyboardDidShow', () => {
+      run();
+      sub.remove();
+    });
+    setTimeout(() => sub.remove(), 1500);
+  }, []);
+
+  const ctx = useMemo(() => ({ scrollIntoView }), [scrollIntoView]);
+
   const inner = (
-    <View style={[styles.body, padded && styles.pad, style]}>{children}</View>
+    <View ref={contentRef} collapsable={false} style={[styles.body, padded && styles.pad, style]}>
+      {children}
+    </View>
   );
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      {scroll ? (
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
-          {inner}
-        </ScrollView>
-      ) : (
-        inner
-      )}
-    </SafeAreaView>
+    <ScreenScroll.Provider value={ctx}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        {scroll ? (
+          <ScrollView
+            ref={scrollRef}
+            automaticallyAdjustKeyboardInsets
+            keyboardDismissMode="interactive"
+            contentContainerStyle={styles.scroll}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled">
+            {inner}
+          </ScrollView>
+        ) : (
+          inner
+        )}
+      </SafeAreaView>
+    </ScreenScroll.Provider>
   );
 }
 

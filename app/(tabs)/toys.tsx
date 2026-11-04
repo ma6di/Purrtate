@@ -5,12 +5,20 @@ import { useRouter } from 'expo-router';
 import { ToyCard } from '@/components/ToyCard';
 import { Screen } from '@/components/ui/Screen';
 import { Chip, PawButton } from '@/components/ui/PawButton';
-import { Body, Display, Label } from '@/components/ui/Type';
+import { Body, Display, Label, Title } from '@/components/ui/Type';
+import { toySuggestions, type ToySuggestion } from '@/lib/toyAdvice';
 import { useHousehold } from '@/store/useAppStore';
 import { colors, radii } from '@/theme';
 import type { ToyStatus } from '@/types/models';
 
 type Filter = 'all' | ToyStatus;
+
+const IDEA_LABEL: Record<ToySuggestion['kind'], string> = {
+  add: 'Add toys',
+  buy: 'Shopping idea',
+  refresh: 'Novelty',
+  safety: 'Play tip',
+};
 
 export default function ToysScreen() {
   const router = useRouter();
@@ -25,6 +33,7 @@ export default function ToysScreen() {
   }, [household, filter]);
 
   if (!household) return null;
+  const ideas = toySuggestions(household).slice(0, 3);
 
   return (
     <Screen scroll>
@@ -33,6 +42,24 @@ export default function ToysScreen() {
       <Body style={{ marginTop: 6 }}>
         Names and types only — faster than photos, and every mouse looks like a mouse.
       </Body>
+
+      {ideas.length ? (
+        <View style={styles.ideas}>
+          {ideas.map((idea) => (
+            <View
+              key={idea.id}
+              style={[
+                styles.idea,
+                idea.kind === 'buy' && styles.ideaBuy,
+                idea.kind === 'safety' && styles.ideaSafety,
+              ]}>
+              <Label>{IDEA_LABEL[idea.kind]}</Label>
+              <Title style={{ marginTop: 2 }}>{idea.title}</Title>
+              <Body style={{ marginTop: 4, fontSize: 14 }}>{idea.body}</Body>
+            </View>
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.filters}>
         {(['all', 'active', 'resting', 'retired'] as Filter[]).map((f) => (
@@ -62,6 +89,16 @@ export default function ToysScreen() {
 }
 
 const styles = StyleSheet.create({
+  ideas: { gap: 10, marginTop: 16 },
+  idea: {
+    padding: 14,
+    borderRadius: radii.lg,
+    backgroundColor: colors.paper,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  ideaBuy: { backgroundColor: colors.honeySoft, borderColor: colors.honeySoft },
+  ideaSafety: { backgroundColor: colors.sageSoft, borderColor: colors.sageSoft },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 16 },
   list: { gap: 10, marginBottom: 18 },
   empty: {

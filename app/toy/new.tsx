@@ -3,11 +3,13 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { ToyGlyph } from '@/components/icons/ToyGlyph';
+import { ColorRow } from '@/components/ToyPickers';
+import { BackButton } from '@/components/ui/BackButton';
 import { Screen } from '@/components/ui/Screen';
-import { IconButton, PawButton } from '@/components/ui/PawButton';
+import { PawButton } from '@/components/ui/PawButton';
 import { Body, Display, Label, Title } from '@/components/ui/Type';
 import { tap } from '@/lib/haptics';
-import { TOY_KINDS } from '@/lib/presets';
+import { PLAY_ROLES, TOY_KINDS, roleOf } from '@/lib/presets';
 import { useAppStore, useHousehold } from '@/store/useAppStore';
 import { colors, fonts, radii } from '@/theme';
 import type { ToyKind } from '@/types/models';
@@ -19,20 +21,19 @@ export default function NewToyScreen() {
   const [name, setName] = useState('');
   const [kind, setKind] = useState<ToyKind>('mouse');
   const [groupId, setGroupId] = useState<string | undefined>(undefined);
+  const [color, setColor] = useState<string | undefined>(undefined);
 
   if (!household) return null;
 
   const save = () => {
-    addToy({ name, kind, groupId });
+    addToy({ name, kind, groupId, color });
     router.back();
   };
 
   return (
     <Screen scroll>
       <View style={styles.top}>
-        <IconButton onPress={() => router.back()}>
-          <Body style={{ color: colors.ink }}>←</Body>
-        </IconButton>
+        <BackButton />
       </View>
       <Label>New friend</Label>
       <Display>Add a toy</Display>
@@ -66,6 +67,18 @@ export default function NewToyScreen() {
         })}
       </View>
 
+      <Body style={styles.role}>
+        {(() => {
+          const r = PLAY_ROLES.find((p) => p.role === roleOf(kind))!;
+          return `${r.label} toy: ${r.blurb}`;
+        })()}
+      </Body>
+
+      <Label>Colour (optional)</Label>
+      <View style={{ marginVertical: 12 }}>
+        <ColorRow value={color} onChange={setColor} />
+      </View>
+
       <Label>Basket</Label>
       <View style={styles.groups}>
         <Pressable
@@ -95,6 +108,7 @@ export default function NewToyScreen() {
 }
 
 const styles = StyleSheet.create({
+  role: { fontSize: 14, marginBottom: 14 },
   top: { marginBottom: 8 },
   input: {
     marginTop: 16,

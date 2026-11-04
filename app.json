@@ -26,6 +26,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "./plugins/withSceneLifecycle",
       "expo-router",
       [
         "expo-splash-screen",
@@ -41,7 +42,8 @@
         {
           "color": "#D4654A"
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

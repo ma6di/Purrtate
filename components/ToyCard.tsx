@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { ToyGlyph, kindColor } from '@/components/icons/ToyGlyph';
+import { ColorDot } from '@/components/ToyPickers';
 import { Body, Label } from '@/components/ui/Type';
 import { tap } from '@/lib/haptics';
 import { freshnessLabel, freshnessScore } from '@/lib/rotation';
@@ -23,7 +24,10 @@ export function ToyCard({ toy, energy }: { toy: Toy; energy: Energy }) {
         <ToyGlyph kind={toy.kind} size={30} />
       </View>
       <View style={styles.meta}>
-        <Body style={styles.name}>{toy.name}</Body>
+        <View style={styles.nameRow}>
+          <Body style={styles.name}>{toy.name}</Body>
+          <ColorDot hex={toy.color} />
+        </View>
         <Label>{freshnessLabel(score, toy.status)}</Label>
         <View style={styles.track}>
           <View style={[styles.fill, { width: `${score}%`, backgroundColor: tint }]} />
@@ -55,6 +59,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   meta: { flex: 1 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   name: {
     fontFamily: fonts.bodyBold,
     color: colors.ink,
