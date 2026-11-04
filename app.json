@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "app.purrtate.den",
+      "bundleIdentifier": "app.purrtate",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
