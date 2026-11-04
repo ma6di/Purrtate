@@ -22,3 +22,34 @@ web-build/
 
 # graphify knowledge graph (generated locally)
 graphify-out/
+graphify-out/
+.graphify/
+
+# Claude Code local files
+.claude/
+CLAUDE.local.md
+
+# Secrets and signing
+.env
+.env*.local
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.jks
+credentials.json
+
+# Logs, caches, coverage
+*.log
+npm-debug.*
+yarn-error.*
+coverage/
+.metro-health-check*
+__pycache__/
+*.pyc
+*.tsbuildinfo
+
+# Editors / OS
+.idea/
+*.swp
+**/.DS_Store
