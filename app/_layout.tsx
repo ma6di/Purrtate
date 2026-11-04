@@ -9,6 +9,7 @@ import {
 } from '@expo-google-fonts/nunito';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -16,7 +17,6 @@ import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
-import { PhoneFrame } from '@/components/ui/Screen';
 import { useAppStore } from '@/store/useAppStore';
 import { colors } from '@/theme';
 
@@ -24,18 +24,14 @@ export { ErrorBoundary } from 'expo-router';
 
 SplashScreen.preventAutoHideAsync();
 
-if (Platform.OS !== 'web') {
-  void import('expo-notifications').then((Notifications) => {
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: false,
-        shouldSetBadge: false,
-      }),
-    });
-  });
-}
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
 
 export const unstable_settings = {
   initialRouteName: 'index',
@@ -87,7 +83,7 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.cream }}>
-      <PhoneFrame>{tree}</PhoneFrame>
+      {tree}
     </GestureHandlerRootView>
   );
 }

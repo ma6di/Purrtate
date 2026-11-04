@@ -8,10 +8,10 @@
     "scheme": "purrtate",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "app.purrtate.den",
       "infoPlist": {
-        "NSUserNotificationsUsageDescription": "Purrtate can nudge you on this phone when a toy basket is due to rotate."
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -19,11 +19,6 @@
         "backgroundColor": "#F3E6D4",
         "foregroundImage": "./assets/images/icon.png"
       }
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       "./plugins/withSceneLifecycle",
@@ -42,8 +37,7 @@
         {
           "color": "#D4654A"
         }
-      ],
-      "expo-web-browser"
+      ]
     ],
     "experiments": {
       "typedRoutes": true

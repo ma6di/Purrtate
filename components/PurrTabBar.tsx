@@ -1,10 +1,11 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { PawMark } from '@/components/icons/CatLogo';
-import { BasketGlyph, ChartGlyph, HomeGlyph } from '@/components/icons/TabIcons';
-import { paw, tap } from '@/lib/haptics';
-import { colors, fonts, shadow } from '@/theme';
+import { BasketGlyph, ToyMouseGlyph } from '@/components/icons/TabIcons';
+import { tap } from '@/lib/haptics';
+import { anyBasketIssues, newToyNudge, toySuggestions } from '@/lib/toyAdvice';
+import { useHousehold } from '@/store/useAppStore';
+import { colors, fonts } from '@/theme';
 
 type TabBarProps = {
   state: {
@@ -21,43 +22,42 @@ type TabBarProps = {
   };
 };
 
-const ICONS = {
-  index: HomeGlyph,
-  toys: BasketGlyph,
-  play: null,
-  insights: ChartGlyph,
+const TABS: Record<string, { label: string; Icon: typeof BasketGlyph }> = {
+  index: { label: 'Today', Icon: BasketGlyph },
+  toys: { label: 'Toys', Icon: ToyMouseGlyph },
 };
 
 export function PurrTabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
+  const household = useHousehold();
+  const toysNeedAttention =
+    !!household &&
+    (anyBasketIssues(household) || newToyNudge(household).due || toySuggestions(household).length > 0);
   return (
     <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 10) }]}>
       <View style={styles.bar}>
         {state.routes.map((route, index) => {
+          const tab = TABS[route.name];
+          if (!tab) return null;
           const focused = state.index === index;
           const color = focused ? colors.terracotta : colors.whisker;
           const onPress = () => {
             const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-            if (route.name === 'play') paw();
-            else tap();
+            tap();
             if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
           };
-          if (route.name === 'play') {
-            return (
-              <Pressable key={route.key} onPress={onPress} style={styles.pawWrap}>
-                <View style={[styles.paw, shadow.paw, focused && styles.pawOn]}>
-                  <PawMark size={28} color={colors.white} />
-                </View>
-              </Pressable>
-            );
-          }
-          const Icon = ICONS[route.name as keyof typeof ICONS];
           return (
-            <Pressable key={route.key} onPress={onPress} style={styles.item}>
-              {Icon ? <Icon color={color} /> : null}
-              <Text style={[styles.label, { color }]}>
-                {route.name === 'index' ? 'Today' : route.name === 'toys' ? 'Toys' : 'Den'}
-              </Text>
+            <Pressable
+              key={route.key}
+              onPress={onPress}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: focused }}
+              style={[styles.item, focused && styles.itemOn]}>
+              <View>
+                <tab.Icon color={color} />
+                {route.name === 'toys' && toysNeedAttention ? <View style={styles.badge} /> : null}
+              </View>
+              <Text style={[styles.label, { color }]}>{tab.label}</Text>
             </Pressable>
           );
         })}
@@ -73,42 +73,37 @@ const styles = StyleSheet.create({
   },
   bar: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
+    gap: 8,
     backgroundColor: colors.paper,
     borderRadius: 28,
-    paddingHorizontal: 10,
-    paddingTop: 10,
-    paddingBottom: 8,
+    padding: 6,
     borderWidth: 1,
     borderColor: colors.line,
   },
   item: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-    paddingBottom: 4,
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    borderRadius: 22,
+  },
+  itemOn: { backgroundColor: '#F8E4DC' },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.terracotta,
+    borderWidth: 2,
+    borderColor: colors.paper,
   },
   label: {
     fontFamily: fonts.label,
-    fontSize: 10,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-  },
-  pawWrap: {
-    width: 74,
-    alignItems: 'center',
-    marginTop: -28,
-  },
-  paw: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.terracotta,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pawOn: {
-    backgroundColor: colors.terracottaDeep,
+    fontSize: 13,
+    letterSpacing: 0.4,
   },
 });

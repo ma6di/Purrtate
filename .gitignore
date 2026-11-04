@@ -15,9 +15,10 @@ node_modules
 dist/
 web-build/
 
-# graphify cache (graph.json and report stay tracked)
-graphify-out/cache/
 
 # Editors / OS
 .vscode/
 .DS_Store
+
+# graphify knowledge graph (generated locally)
+graphify-out/

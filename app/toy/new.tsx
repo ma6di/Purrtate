@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ToyGlyph } from '@/components/icons/ToyGlyph';
 import { ColorRow } from '@/components/ToyPickers';
@@ -13,6 +13,7 @@ import { PLAY_ROLES, TOY_KINDS, roleOf } from '@/lib/presets';
 import { useAppStore, useHousehold } from '@/store/useAppStore';
 import { colors, fonts, radii } from '@/theme';
 import type { ToyKind } from '@/types/models';
+import { MAX_NAME } from '@/lib/sanitize';
 
 export default function NewToyScreen() {
   const router = useRouter();
@@ -20,7 +21,8 @@ export default function NewToyScreen() {
   const addToy = useAppStore((s) => s.addToy);
   const [name, setName] = useState('');
   const [kind, setKind] = useState<ToyKind>('mouse');
-  const [groupId, setGroupId] = useState<string | undefined>(undefined);
+  const params = useLocalSearchParams<{ group?: string }>();
+  const [groupId, setGroupId] = useState<string | undefined>(params.group);
   const [color, setColor] = useState<string | undefined>(undefined);
 
   if (!household) return null;
@@ -42,6 +44,7 @@ export default function NewToyScreen() {
       <TextInput
         value={name}
         onChangeText={setName}
+        maxLength={MAX_NAME}
         placeholder="Feather wand, spring, crinkle sack…"
         placeholderTextColor={colors.whisker}
         style={styles.input}

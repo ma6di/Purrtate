@@ -12,6 +12,7 @@ import { PLAY_ROLES, STARTER_BASKETS, roleOf, type DraftBasket, type DraftToy } 
 import { basketMix, mixHint } from '@/lib/toyAdvice';
 import { colors, fonts, radii } from '@/theme';
 import type { ToyKind } from '@/types/models';
+import { MAX_NAME } from '@/lib/sanitize';
 
 export function emptyBaskets(): DraftBasket[] {
   return ['Basket A', 'Basket B', 'Basket C'].map((name) => ({ key: uid('b'), name, toys: [] }));
@@ -200,6 +201,7 @@ function ToyForm({
       <TextInput
         value={name}
         onChangeText={setName}
+        maxLength={MAX_NAME}
         placeholder="Red mouse, feather wand…"
         placeholderTextColor={colors.whisker}
         style={styles.input}

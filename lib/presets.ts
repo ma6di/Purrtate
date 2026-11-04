@@ -1,54 +1,49 @@
 import type { Energy, PlayRole, ToyKind } from '@/types/models';
 
+/**
+ * Starting points only. No study gives day counts for toy rotation: habituation research
+ * works in minutes and hours. The order (kittens swap most often) follows the finding that
+ * young cats play more. Owners can override the interval in Settings.
+ */
 export const ENERGY_PRESETS: Record<
   Energy,
   {
     label: string;
     blurb: string;
+    /** Suggested days a basket stays out. */
     intervalDays: number;
-    restDays: number;
-    sessionMin: number;
-    sessionsPerDay: number;
-    unusedDays: number;
+    /** Suggest a brand-new toy this often. */
+    newToyDays: number;
   }
 > = {
   kitten: {
     label: 'Kitten',
-    blurb: 'Tiny hunter. Swap toys every couple of days.',
+    blurb: 'Plays the most. Suggested start: swap every 2 days.',
     intervalDays: 2,
-    restDays: 7,
-    sessionMin: 12,
-    sessionsPerDay: 2,
-    unusedDays: 2,
+    newToyDays: 21,
   },
   high: {
     label: 'Zoomies',
-    blurb: 'High energy. Keep novelty coming every few days.',
+    blurb: 'Bored quickly. Suggested start: swap every 3 days.',
     intervalDays: 3,
-    restDays: 7,
-    sessionMin: 15,
-    sessionsPerDay: 2,
-    unusedDays: 3,
+    newToyDays: 28,
   },
   adult: {
     label: 'Adult',
-    blurb: 'A weekly basket swap keeps play feeling new.',
+    blurb: 'Suggested start: swap once a week.',
     intervalDays: 7,
-    restDays: 21,
-    sessionMin: 12,
-    sessionsPerDay: 2,
-    unusedDays: 7,
+    newToyDays: 42,
   },
   senior: {
     label: 'Senior',
-    blurb: 'Gentle pace. Rotate weekly or every other week.',
+    blurb: 'Plays less. Suggested start: swap every 2 weeks.',
     intervalDays: 14,
-    restDays: 28,
-    sessionMin: 8,
-    sessionsPerDay: 2,
-    unusedDays: 10,
+    newToyDays: 56,
   },
 };
+
+/** Choices for "Swap every" in Settings. */
+export const SWAP_OPTIONS = [2, 3, 5, 7, 10, 14] as const;
 
 export const TOY_KINDS: { kind: ToyKind; label: string; hint: string; role: PlayRole }[] = [
   { kind: 'wand', label: 'Wand', hint: 'Interactive hunt', role: 'chase' },
@@ -150,7 +145,7 @@ export const BASKET_TIPS: { id: string; title: string; body: string }[] = [
   {
     id: 'wand',
     title: 'Wands are for together',
-    body: 'Cats play longest when a person moves a feather wand. Strings and ribbons go back in a drawer after each hunt, because swallowed string is a vet emergency.',
+    body: 'Cats play longest when a person moves a feather wand. Strings and ribbons go back in a drawer after each play session, because swallowed string is a vet emergency.',
   },
   {
     id: 'colour',

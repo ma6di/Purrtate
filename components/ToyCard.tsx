@@ -5,13 +5,15 @@ import { ToyGlyph, kindColor } from '@/components/icons/ToyGlyph';
 import { ColorDot } from '@/components/ToyPickers';
 import { Body, Label } from '@/components/ui/Type';
 import { tap } from '@/lib/haptics';
-import { freshnessLabel, freshnessScore } from '@/lib/rotation';
+import { PLAY_ROLES, roleOf } from '@/lib/presets';
+import { freshnessLabel, freshnessScore, type Household } from '@/lib/rotation';
 import { colors, fonts, radii } from '@/theme';
-import type { Energy, Toy } from '@/types/models';
+import type { Toy } from '@/types/models';
 
-export function ToyCard({ toy, energy }: { toy: Toy; energy: Energy }) {
+export function ToyCard({ toy, household }: { toy: Toy; household: Household }) {
   const router = useRouter();
-  const score = freshnessScore(toy, energy);
+  const score = freshnessScore(toy, household);
+  const role = PLAY_ROLES.find((r) => r.role === roleOf(toy.kind))!.label;
   const tint = kindColor(toy.kind);
   return (
     <Pressable
@@ -34,7 +36,7 @@ export function ToyCard({ toy, energy }: { toy: Toy; energy: Energy }) {
         </View>
       </View>
       <View style={styles.right}>
-        <Label style={styles.status}>{toy.status === 'active' ? 'Out' : toy.status}</Label>
+        <Label style={styles.status}>{role}</Label>
       </View>
     </Pressable>
   );

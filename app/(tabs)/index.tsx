@@ -1,25 +1,22 @@
 import { useEffect } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { PlayRing } from '@/components/PlayRing';
-import { ToyGlyph } from '@/components/icons/ToyGlyph';
+import { NewToyCard } from '@/components/NewToyCard';
+import { ToyCard } from '@/components/ToyCard';
+import { YarnMark } from '@/components/icons/CatLogo';
 import { Screen } from '@/components/ui/Screen';
 import { Chip, IconButton, PawButton } from '@/components/ui/PawButton';
-import { Body, Display, EarCard, Label, Title } from '@/components/ui/Type';
-import { YarnMark } from '@/components/icons/CatLogo';
-import { formatMinutes, greeting } from '@/lib/dates';
-import { ENERGY_PRESETS } from '@/lib/presets';
+import { Body, Display, EarCard, Label } from '@/components/ui/Type';
+import { success, warning } from '@/lib/haptics';
 import { syncReminders } from '@/lib/reminders';
-import {
-  activeGroup,
-  dailyTargetMs,
-  nextGroup,
-  rotationAlerts,
-  todaySessions,
-} from '@/lib/rotation';
-import { useHousehold, useAppStore } from '@/store/useAppStore';
+import { basketStatus, earlySwapSuggestion, toysInGroup } from '@/lib/rotation';
+import { useAppStore, useHousehold } from '@/store/useAppStore';
 import { colors, fonts, radii } from '@/theme';
+
+function dayWord(n: number) {
+  return `${n} day${n === 1 ? '' : 's'}`;
+}
 
 export default function TodayScreen() {
   const router = useRouter();
@@ -27,48 +24,45 @@ export default function TodayScreen() {
   const rotate = useAppStore((s) => s.rotate);
   const cats = useAppStore((s) => s.cats);
   const switchCat = useAppStore((s) => s.switchCat);
-
   const remindersOn = useAppStore((s) => s.settings.remindersOn);
-  const lastRotationAt = useAppStore((s) => s.settings.lastRotationAt);
-  const sessionCount = useAppStore((s) => s.sessions.length);
-  const activeCatId = useAppStore((s) => s.activeCatId);
+  const updateSettings = useAppStore((s) => s.updateSettings);
+
+  const status = household ? basketStatus(household) : null;
 
   useEffect(() => {
-    const s = useAppStore.getState();
-    const cat = s.cats.find((c) => c.id === s.activeCatId);
-    if (!cat) return;
-    const snapshot = {
-      cat,
-      toys: s.toys.filter((t) => t.catId === cat.id),
-      groups: s.groups.filter((g) => g.catId === cat.id),
-      sessions: s.sessions.filter((x) => x.catId === cat.id),
-      settings: s.settings,
-    };
+    if (!household || !status) return;
     void syncReminders(
-      s.settings.remindersOn,
-      rotationAlerts(snapshot).find((a) => a.kind === 'rotate')
+      remindersOn,
+      status.next
+        ? { dueAt: status.dueAt, nextName: status.next.name, catName: household.cat.name }
+        : null
     );
-  }, [remindersOn, lastRotationAt, sessionCount, activeCatId]);
+    // Reschedule only when the due date, next basket or setting actually changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remindersOn, status?.dueAt, status?.next?.id, household?.cat.id]);
 
-  if (!household) return null;
+  if (!household || !status) return null;
 
-  const { cat, toys, sessions, settings } = household;
-  const group = activeGroup(household);
-  const nxt = nextGroup(household);
-  const out = toys.filter((t) => t.status === 'active');
-  const today = todaySessions(sessions, cat.id);
-  const todayMs = today.reduce((sum, s) => sum + s.durationMs, 0);
-  const target = dailyTargetMs(cat.energy);
-  const preset = ENERGY_PRESETS[cat.energy];
-  const alerts = rotationAlerts(household);
-  const last = [...sessions].sort((a, b) => (a.endedAt < b.endedAt ? 1 : -1))[0];
-  const lastToy = toys.find((t) => t.id === last?.toyId);
+  const { cat } = household;
+  const { group, next, daysOut, interval, daysLeft, due } = status;
+  const out = group ? toysInGroup(household, group.id) : [];
+  const nextToys = next ? toysInGroup(household, next.id) : [];
+  const progress = Math.min(1, daysOut / Math.max(1, interval));
+  const suggestion = earlySwapSuggestion(household);
+
+  const statusLine = !next
+    ? 'Only one basket has toys, so there’s nothing to swap yet.'
+    : due
+      ? `Out ${dayWord(daysOut)}. Time to swap.`
+      : daysLeft === 1
+        ? `Out ${dayWord(daysOut)}. Swap tomorrow.`
+        : `Out ${dayWord(daysOut)}. Swap in ${dayWord(daysLeft)}.`;
 
   return (
     <Screen scroll>
       <View style={styles.top}>
         <View style={{ flex: 1 }}>
-          <Label>{greeting()}</Label>
+          <Label>Today</Label>
           <Display>{cat.name}</Display>
         </View>
         <IconButton onPress={() => router.push('/settings')}>
@@ -79,124 +73,150 @@ export default function TodayScreen() {
       {cats.length > 1 && (
         <View style={styles.cats}>
           {cats.map((c) => (
-            <Chip
-              key={c.id}
-              label={c.name}
-              selected={c.id === cat.id}
-              onPress={() => switchCat(c.id)}
-            />
+            <Chip key={c.id} label={c.name} selected={c.id === cat.id} onPress={() => switchCat(c.id)} />
           ))}
         </View>
       )}
 
       <EarCard>
-        <Label>{group?.name ?? 'No basket yet'}</Label>
-        <Title style={{ marginTop: 4 }}>Out on the rug</Title>
-        {out.length ? (
-          <View style={styles.toys}>
-            {out.map((t) => (
-              <Pressable
-                key={t.id}
-                onPress={() => router.push(`/toy/${t.id}`)}
-                style={styles.toyChip}>
-                <ToyGlyph kind={t.kind} size={22} />
-                <Body style={styles.toyName}>{t.name}</Body>
-              </Pressable>
-            ))}
+        <Label>Out now</Label>
+        <Display style={styles.basketName}>{group?.name ?? 'No basket'}</Display>
+        <Body style={[styles.status, due && styles.statusDue]}>{statusLine}</Body>
+        {next ? (
+          <View style={styles.track}>
+            <View
+              style={[
+                styles.fill,
+                { width: `${progress * 100}%`, backgroundColor: due ? colors.terracotta : colors.honey },
+              ]}
+            />
           </View>
-        ) : (
-          <Body style={{ marginTop: 8 }}>Add a few toys and we’ll split them into rotating baskets.</Body>
-        )}
+        ) : null}
+
+        <View style={styles.list}>
+          {out.map((t) => (
+            <ToyCard key={t.id} toy={t} household={household} />
+          ))}
+          {!out.length && (
+            <View style={styles.empty}>
+              <Body>No toys in this basket yet.</Body>
+              <PawButton
+                label="Add toys"
+                variant="ghost"
+                paw={false}
+                onPress={() => router.push('/(tabs)/toys')}
+              />
+            </View>
+          )}
+        </View>
       </EarCard>
 
-      <View style={styles.ringCard}>
-        <PlayRing
-          progress={todayMs / target}
-          currentMs={todayMs}
-          targetMs={target}
-          sessions={today.length}
-          targetSessions={preset.sessionsPerDay}
-        />
-        <Body style={styles.hint}>
-          Aim for two short hunts (~{preset.sessionMin} min). Stop while it’s still fun.
-        </Body>
-        <PawButton label="Start a hunt" onPress={() => router.push('/(tabs)/play')} />
-      </View>
+      <NewToyCard household={household} />
 
-      {alerts.map((a) => (
-        <View key={a.title} style={[styles.alert, a.kind === 'rotate' && styles.alertRotate]}>
-          <Label>{a.kind === 'rotate' ? 'Rotation' : a.kind === 'play' ? 'Play' : 'Novelty'}</Label>
-          <Title style={{ marginTop: 4 }}>{a.title}</Title>
-          <Body style={{ marginTop: 6 }}>{a.body}</Body>
-          {a.kind === 'rotate' && nxt ? (
-            <View style={{ marginTop: 12 }}>
-              <PawButton label={`Bring out ${nxt.name}`} onPress={rotate} />
-            </View>
-          ) : null}
+      {suggestion ? (
+        <View style={styles.suggest}>
+          <Label>Your cat’s pace</Label>
+          <Body style={styles.suggestText}>
+            You swapped early the last two times, after about {suggestion.avgDaysOut} days. Swap every{' '}
+            {suggestion.suggested} days instead of {suggestion.current}?
+          </Body>
+          <View style={styles.suggestRow}>
+            <PawButton
+              label={`Every ${suggestion.suggested} days`}
+              paw={false}
+              style={{ flex: 1 }}
+              onPress={() =>
+                updateSettings({
+                  rotationIntervalDays: suggestion.suggested,
+                  intervalPromptDismissedAt: new Date().toISOString(),
+                })
+              }
+            />
+            <PawButton
+              label={`Keep ${suggestion.current}`}
+              variant="ghost"
+              paw={false}
+              style={{ flex: 1 }}
+              onPress={() => updateSettings({ intervalPromptDismissedAt: new Date().toISOString() })}
+            />
+          </View>
         </View>
-      ))}
+      ) : null}
 
-      {last && lastToy ? (
-        <View style={styles.last}>
-          <Label>Last pounce</Label>
-          <Body style={styles.lastLine}>
-            {lastToy.name} · {formatMinutes(last.durationMs)}
-            {last.pounces ? ` · ${last.pounces} pounces` : ''}
+      {next ? (
+        <View style={styles.swap}>
+          {!due ? (
+            <Body style={styles.early}>
+              Already bored of these? Ignoring the toys, or only batting them once, means it’s time. Swap early.
+            </Body>
+          ) : null}
+          <PawButton
+            label={`Swap to ${next.name}`}
+            variant={due ? 'fill' : 'ghost'}
+            paw={due}
+            onPress={() => {
+              warning();
+              const outName = group?.name ?? 'This basket';
+              Alert.alert(
+                `Swap to ${next.name}?`,
+                due
+                  ? `${outName} goes back in the cupboard to rest, and ${next.name} comes out.`
+                  : `${outName} has only been out ${dayWord(daysOut)} of ${dayWord(interval)}. Swap early anyway? ${outName} will rest and ${next.name} comes out.`,
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Swap',
+                    onPress: () => {
+                      success();
+                      rotate();
+                    },
+                  },
+                ]
+              );
+            }}
+          />
+          <Body style={styles.swapHint}>
+            {group?.name ?? 'This basket'} goes back in the cupboard to rest. {next.name} comes out with{' '}
+            {nextToys.length} toy{nextToys.length === 1 ? '' : 's'}
+            {nextToys.length ? `: ${nextToys.map((t) => t.name).join(', ')}` : ''}.
           </Body>
         </View>
-      ) : (
-        <View style={styles.last}>
-          <Label>Last pounce</Label>
-          <Body>No hunts logged yet. The big paw is waiting.</Body>
-        </View>
-      )}
-
-      <Body style={styles.foot}>
-        Cycle: every {settings.rotationIntervalDays ?? preset.intervalDays} days · rest{' '}
-        {preset.restDays} days
-      </Body>
+      ) : null}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  top: { flexDirection: 'row', alignItems: 'flex-start', marginTop: 6, marginBottom: 8 },
-  cats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
-  toys: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
-  toyChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.cream,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: radii.pill,
+  top: { flexDirection: 'row', alignItems: 'flex-start', marginTop: 6, marginBottom: 12 },
+  cats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  basketName: { marginTop: 2 },
+  status: { marginTop: 6, fontFamily: fonts.bodyBold, color: colors.inkSoft },
+  statusDue: { color: colors.terracottaDeep },
+  track: {
+    height: 6,
+    borderRadius: 4,
+    backgroundColor: colors.creamDeep,
+    marginTop: 12,
+    overflow: 'hidden',
   },
-  toyName: { fontFamily: fonts.bodyBold, color: colors.ink, fontSize: 14 },
-  ringCard: {
-    marginTop: 18,
-    backgroundColor: colors.paper,
-    borderRadius: 26,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: colors.line,
-    alignItems: 'center',
+  fill: { height: '100%', borderRadius: 4 },
+  list: { gap: 10, marginTop: 16 },
+  empty: {
     gap: 12,
-  },
-  hint: { textAlign: 'center', fontSize: 14 },
-  alert: {
-    marginTop: 14,
-    backgroundColor: colors.sageSoft,
-    borderRadius: 22,
     padding: 16,
+    borderRadius: radii.md,
+    backgroundColor: colors.cream,
   },
-  alertRotate: {
-    backgroundColor: colors.honeySoft,
+  swap: { marginTop: 18, gap: 10 },
+  swapHint: { fontSize: 14, textAlign: 'center' },
+  early: { fontSize: 14, textAlign: 'center', color: colors.inkSoft },
+  suggest: {
+    marginTop: 16,
+    padding: 16,
+    borderRadius: radii.lg,
+    backgroundColor: colors.sageSoft,
+    gap: 8,
   },
-  last: {
-    marginTop: 18,
-    gap: 4,
-  },
-  lastLine: { color: colors.ink, fontFamily: fonts.bodyBold },
-  foot: { marginTop: 20, fontSize: 13 },
+  suggestText: { fontSize: 15, color: colors.ink },
+  suggestRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
 });

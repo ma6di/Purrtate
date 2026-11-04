@@ -11,9 +11,11 @@ import { PawButton } from '@/components/ui/PawButton';
 import { Body, Display, Label, Title } from '@/components/ui/Type';
 import { tap } from '@/lib/haptics';
 import { BASKET_TIPS, ENERGY_PRESETS, type DraftBasket } from '@/lib/presets';
+import { askNotificationPermission } from '@/lib/reminders';
 import { useAppStore } from '@/store/useAppStore';
 import { colors, fonts, radii } from '@/theme';
 import type { Energy } from '@/types/models';
+import { MAX_NAME } from '@/lib/sanitize';
 
 const TIPS_STEP = 3;
 const BUILD_STEP = 4;
@@ -27,6 +29,7 @@ const ENERGIES = (Object.keys(ENERGY_PRESETS) as Energy[]).map((id) => ({
 export default function Onboarding() {
   const router = useRouter();
   const complete = useAppStore((s) => s.completeOnboarding);
+  const updateSettings = useAppStore((s) => s.updateSettings);
   const [step, setStep] = useState(0);
   const [tip, setTip] = useState(0);
   const [name, setName] = useState('');
@@ -44,8 +47,14 @@ export default function Onboarding() {
     if (tip < BASKET_TIPS.length - 1) setTip((t) => t + 1);
     else next();
   };
-  const finish = () => {
+  const [finishing, setFinishing] = useState(false);
+  const finish = async () => {
+    if (finishing) return;
+    setFinishing(true);
+    // Native iOS prompt, asked here because a swap reminder makes sense right now.
+    const permission = await askNotificationPermission();
     complete({ name, energy, baskets });
+    updateSettings({ remindersOn: permission === 'granted' });
     router.replace('/(tabs)');
   };
 
@@ -66,7 +75,7 @@ export default function Onboarding() {
         <View style={styles.block}>
           <Display>Toys that feel new again.</Display>
           <Body style={styles.lead}>
-            Cats habituate fast. Purrtate keeps a small basket out, rests the rest, and nudges you when play goes quiet — all on this phone, no account.
+            Cats get bored of the same toys fast. Purrtate keeps one basket out, rests the other two, and tells you when it’s time to swap. Everything stays on this phone, no account.
           </Body>
           <PawButton label="Meet my cat" onPress={next} />
         </View>
@@ -78,6 +87,7 @@ export default function Onboarding() {
           <TextInput
             value={name}
             onChangeText={setName}
+            maxLength={MAX_NAME}
             placeholder="Mochi, Bean, Pip…"
             placeholderTextColor={colors.whisker}
             style={styles.input}
@@ -92,7 +102,7 @@ export default function Onboarding() {
       {step === 2 && (
         <View style={styles.block}>
           <Title>How wild is the hunt?</Title>
-          <Body>This sets how often baskets swap. You can change it later.</Body>
+          <Body>This picks a starting swap interval. It’s a suggestion, not a rule, and you can change it any time in Settings.</Body>
           <View style={styles.grid}>
             {ENERGIES.map((e) => (
               <Pressable
@@ -142,10 +152,18 @@ export default function Onboarding() {
           <BasketBuilder value={baskets} onChange={setBaskets} />
           <Body style={styles.foot}>
             {total === 0
-              ? 'No toys yet? Open the den anyway and add them later. We’ll tell you what’s worth buying.'
+              ? 'No toys yet? That’s fine. Add them later and we’ll suggest what’s worth buying.'
               : `${total} toy${total === 1 ? '' : 's'} across ${filled} basket${filled === 1 ? '' : 's'}. You can change all of this later.`}
           </Body>
-          <PawButton label="Open the den" onPress={finish} />
+          <Body style={styles.foot}>
+            Next, iPhone will ask if Purrtate can send notifications. We only send one when it’s time to swap
+            baskets, nothing else.
+          </Body>
+          <PawButton
+            disabled={finishing}
+            label={total ? `Put ${baskets[0].name.trim() || 'Basket A'} out` : 'Finish setup'}
+            onPress={finish}
+          />
         </View>
       )}
     </Screen>

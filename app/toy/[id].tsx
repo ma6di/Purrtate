@@ -7,14 +7,14 @@ import { ColorRow } from '@/components/ToyPickers';
 import { BackButton } from '@/components/ui/BackButton';
 import { Screen } from '@/components/ui/Screen';
 import { PawButton } from '@/components/ui/PawButton';
-import { Body, Display, Label, Title } from '@/components/ui/Type';
-import { formatMinutes } from '@/lib/dates';
+import { Body, Display, Label } from '@/components/ui/Type';
 import { tap } from '@/lib/haptics';
 import { TOY_KINDS } from '@/lib/presets';
 import { freshnessLabel, freshnessScore } from '@/lib/rotation';
 import { useAppStore, useHousehold } from '@/store/useAppStore';
 import { colors, fonts, radii } from '@/theme';
-import type { ToyKind, ToyStatus } from '@/types/models';
+import type { ToyStatus } from '@/types/models';
+import { MAX_NAME } from '@/lib/sanitize';
 
 export default function ToyDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -38,9 +38,7 @@ export default function ToyDetailScreen() {
     );
   }
 
-  const score = freshnessScore(toy, household.cat.energy);
-  const sessions = household.sessions.filter((s) => s.toyId === toy.id);
-  const avg = toy.playCount ? toy.totalPlayMs / toy.playCount : 0;
+  const score = freshnessScore(toy, household);
 
   const statusBtn = (status: ToyStatus, label: string) => (
     <Pressable
@@ -65,13 +63,14 @@ export default function ToyDetailScreen() {
         </View>
         <Display>{toy.name}</Display>
         <Label>
-          {freshnessLabel(score, toy.status)} · {Math.round(score)} freshness
+          {freshnessLabel(score, toy.status)}
         </Label>
       </View>
 
       <TextInput
         value={name}
         onChangeText={setName}
+        maxLength={MAX_NAME}
         onEndEditing={() => name.trim() && updateToy(toy.id, { name: name.trim() })}
         style={styles.input}
       />
@@ -118,19 +117,6 @@ export default function ToyDetailScreen() {
         {statusBtn('retired', 'Retired')}
       </View>
 
-      <View style={styles.stats}>
-        <Stat label="Hunts" value={String(toy.playCount)} />
-        <Stat label="Total" value={toy.playCount ? formatMinutes(toy.totalPlayMs) : '—'} />
-        <Stat label="Average" value={toy.playCount ? formatMinutes(avg) : '—'} />
-      </View>
-
-      {sessions.slice(-3).reverse().map((s) => (
-        <Body key={s.id} style={styles.session}>
-          {s.endedAt.slice(0, 10)} · {formatMinutes(s.durationMs)}
-          {s.pounces ? ` · ${s.pounces} pounces` : ''}
-        </Body>
-      ))}
-
       <Body style={styles.worn}>
         Frayed string, loose feathers or a split seam? Retire it. Swallowed string or small parts need a vet the same day.
       </Body>
@@ -154,15 +140,6 @@ export default function ToyDetailScreen() {
         }}
       />
     </Screen>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.stat}>
-      <Label>{label}</Label>
-      <Title>{value}</Title>
-    </View>
   );
 }
 
@@ -226,15 +203,4 @@ const styles = StyleSheet.create({
   },
   statusOn: { borderColor: colors.sage, backgroundColor: colors.sageSoft },
   statusText: { fontFamily: fonts.bodyBold, color: colors.ink },
-  stats: { flexDirection: 'row', gap: 8, marginTop: 8, marginBottom: 12 },
-  stat: {
-    flex: 1,
-    backgroundColor: colors.paper,
-    borderRadius: radii.md,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.line,
-    gap: 4,
-  },
-  session: { marginBottom: 6 },
 });

@@ -1,20 +1,11 @@
-import { daysBetween, dayKey, startOfDay } from '@/lib/dates';
-import { ENERGY_PRESETS } from '@/lib/presets';
-import type {
-  Cat,
-  Energy,
-  Group,
-  RotationAlert,
-  Session,
-  Settings,
-  Toy,
-} from '@/types/models';
+import { addDays, daysBetween } from '@/lib/dates';
+import { ENERGY_PRESETS, SWAP_OPTIONS } from '@/lib/presets';
+import type { Cat, Energy, Group, Settings, Toy } from '@/types/models';
 
 export type Household = {
   cat: Cat;
   toys: Toy[];
   groups: Group[];
-  sessions: Session[];
   settings: Settings;
 };
 
@@ -22,42 +13,16 @@ export function intervalDays(energy: Energy, override: number | null) {
   return override ?? ENERGY_PRESETS[energy].intervalDays;
 }
 
-export function restDaysFor(energy: Energy) {
-  return ENERGY_PRESETS[energy].restDays;
-}
-
-export function dailyTargetMs(energy: Energy) {
-  const p = ENERGY_PRESETS[energy];
-  return p.sessionMin * p.sessionsPerDay * 60_000;
-}
-
-export function freshnessScore(toy: Toy, energy: Energy, at = new Date()) {
-  const preset = ENERGY_PRESETS[energy];
-  if (toy.status === 'retired') return 0;
-  if (toy.status === 'resting') {
-    const rested = Number.isFinite(daysBetween(toy.restStartedAt, at))
-      ? daysBetween(toy.restStartedAt, at)
-      : 0;
-    return Math.min(100, 35 + (rested / preset.restDays) * 65);
-  }
-  if (!toy.lastUsedAt) return 88;
-  const idle = daysBetween(toy.lastUsedAt, at);
-  let score = 100 - idle * (100 / Math.max(preset.unusedDays + 2, 4));
-  if (toy.playCount >= 4) score -= 8;
-  return Math.max(8, Math.min(100, Math.round(score)));
-}
-
-export function freshnessLabel(score: number, status: Toy['status']) {
-  if (status === 'retired') return 'Retired';
-  if (status === 'resting') {
-    if (score >= 85) return 'Feels new';
-    if (score >= 60) return 'Napping';
-    return 'Resting';
-  }
-  if (score >= 80) return 'Fresh';
-  if (score >= 55) return 'Familiar';
-  if (score >= 35) return 'Going stale';
-  return 'Habituated';
+/**
+ * How long a basket rests before its turn comes round again: one swap interval
+ * for every other basket in the rotation. Toys count as fully rested at that point.
+ */
+export function restDaysFor(household: Household) {
+  const interval = intervalDays(household.cat.energy, household.settings.rotationIntervalDays);
+  const baskets = household.groups.filter((g) =>
+    household.toys.some((t) => t.groupId === g.id && t.status !== 'retired')
+  ).length;
+  return interval * Math.max(1, baskets - 1);
 }
 
 export function activeGroup(household: Household) {
@@ -79,104 +44,91 @@ export function nextGroup(household: Household) {
   return usable[(idx + 1) % usable.length];
 }
 
-export function todaySessions(sessions: Session[], catId: string, at = new Date()) {
-  const key = dayKey(at.toISOString());
-  return sessions.filter((s) => s.catId === catId && dayKey(s.endedAt) === key);
+/** When the basket that's out now came out. */
+export function outSince(household: Household) {
+  return household.settings.lastRotationAt ?? household.cat.createdAt;
 }
 
-export function playByDay(sessions: Session[], catId: string, days = 14, at = new Date()) {
-  const start = startOfDay(at);
-  return Array.from({ length: days }, (_, i) => {
-    const d = new Date(start);
-    d.setDate(d.getDate() - (days - 1 - i));
-    const key = dayKey(d.toISOString());
-    const ms = sessions
-      .filter((s) => s.catId === catId && dayKey(s.endedAt) === key)
-      .reduce((sum, s) => sum + s.durationMs, 0);
-    return { date: key, ms };
-  });
-}
+export type BasketStatus = {
+  group: Group | null;
+  next: Group | null;
+  daysOut: number;
+  interval: number;
+  /** Days until the swap is due; 0 or less means due now. */
+  daysLeft: number;
+  due: boolean;
+  dueAt: string;
+};
 
-export function favoriteToy(household: Household) {
-  return [...household.toys].sort((a, b) => b.totalPlayMs - a.totalPlayMs)[0] ?? null;
-}
-
-function engagementDropped(household: Household, toy: Toy) {
-  const recent = household.sessions
-    .filter((s) => s.toyId === toy.id)
-    .sort((a, b) => (a.endedAt < b.endedAt ? 1 : -1))
-    .slice(0, 4);
-  if (recent.length < 3) return false;
-  const latest = recent[0].durationMs;
-  const prior =
-    recent.slice(1).reduce((sum, s) => sum + s.durationMs, 0) / (recent.length - 1);
-  return prior > 0 && latest < prior * 0.5;
-}
-
-export function rotationAlerts(household: Household, at = new Date()): RotationAlert[] {
-  const { cat, toys, sessions, settings } = household;
-  const preset = ENERGY_PRESETS[cat.energy];
+export function basketStatus(household: Household, at = new Date()): BasketStatus {
+  const { cat, settings } = household;
+  const since = outSince(household);
   const interval = intervalDays(cat.energy, settings.rotationIntervalDays);
-  const alerts: RotationAlert[] = [];
-  const activeToys = toys.filter((t) => t.status === 'active');
-  const current = activeGroup(household);
-  const nxt = nextGroup(household);
+  const daysOut = Math.max(0, daysBetween(since, at));
+  const next = nextGroup(household);
+  return {
+    group: activeGroup(household),
+    next,
+    daysOut,
+    interval,
+    daysLeft: interval - daysOut,
+    due: !!next && daysOut >= interval,
+    dueAt: addDays(since, interval),
+  };
+}
 
-  const daysSinceRotate = daysBetween(settings.lastRotationAt ?? cat.createdAt, at);
-  const stale = activeToys.filter((t) => freshnessScore(t, cat.energy, at) < 38);
-  const ignored = activeToys.filter((t) => {
-    const since = t.lastUsedAt ?? t.createdAt;
-    return daysBetween(since, at) >= preset.unusedDays;
-  });
-  const dropped = activeToys.filter((t) => engagementDropped(household, t));
-
-  if (nxt && (daysSinceRotate >= interval || stale.length >= Math.max(1, activeToys.length - 1))) {
-    alerts.push({
-      kind: 'rotate',
-      title: `Swap in ${nxt.name}`,
-      body:
-        daysSinceRotate >= interval
-          ? `${current?.name ?? 'This basket'} has been out for ${daysSinceRotate} days. ${cat.name} will treat ${nxt.name} as new.`
-          : `Play with ${current?.name ?? 'these toys'} is flattening. A fresh basket usually restores the pounce.`,
-    });
-  } else if (ignored.length && nxt) {
-    alerts.push({
-      kind: 'rotate',
-      title: 'Quiet toys',
-      body: `${ignored[0].name} has been ignored for ${daysBetween(ignored[0].lastUsedAt, at)} days. Time to rotate.`,
-    });
-  } else if (dropped.length && nxt) {
-    alerts.push({
-      kind: 'rotate',
-      title: 'Habituation blip',
-      body: `${dropped[0].name} sessions just halved. A swap will likely spike interest again.`,
-    });
+/**
+ * 0–100. Toys that are out lose freshness the longer the basket stays out.
+ * Resting toys regain it until they've rested long enough to feel new.
+ */
+export function freshnessScore(toy: Toy, household: Household, at = new Date()) {
+  if (toy.status === 'retired') return 0;
+  const { cat, settings } = household;
+  if (toy.status === 'resting') {
+    const rested = daysBetween(toy.restStartedAt, at);
+    const days = Number.isFinite(rested) ? rested : 0;
+    return Math.round(Math.min(100, 35 + (days / restDaysFor(household)) * 65));
   }
+  const interval = intervalDays(cat.energy, settings.rotationIntervalDays);
+  const daysOut = Math.max(0, daysBetween(outSince(household), at));
+  return Math.round(Math.max(15, 100 - (daysOut / interval) * 70));
+}
 
-  const todayMs = todaySessions(sessions, cat.id, at).reduce((sum, s) => sum + s.durationMs, 0);
-  const target = dailyTargetMs(cat.energy);
-  if (todayMs < target * 0.4) {
-    alerts.push({
-      kind: 'play',
-      title: 'Hunt still open',
-      body: `${cat.name} is at ${Math.round(todayMs / 60_000)} of ${Math.round(target / 60_000)} min today. A short wand burst counts.`,
-    });
+export function freshnessLabel(score: number, status: Toy['status']) {
+  if (status === 'retired') return 'Retired';
+  if (status === 'resting') {
+    if (score >= 85) return 'Feels new';
+    if (score >= 60) return 'Napping';
+    return 'Resting';
   }
+  if (score >= 75) return 'Fresh';
+  if (score >= 45) return 'Familiar';
+  return 'Needs a rest';
+}
 
-  const ready = toys.filter(
-    (t) =>
-      t.status === 'resting' &&
-      daysBetween(t.restStartedAt, at) >= preset.restDays
-  );
-  if (ready.length) {
-    alerts.push({
-      kind: 'reintroduce',
-      title: `${ready[0].name} feels new`,
-      body: `Rested about a week or more. Bring it back, or wait for the next group swap.`,
-    });
-  }
+export type IntervalSuggestion = { current: number; suggested: number; avgDaysOut: number };
 
-  return alerts.slice(0, 3);
+/**
+ * After two early swaps in a row at the current interval, suggest a shorter one.
+ * One early swap could be a bad day; two is a pattern.
+ */
+export function earlySwapSuggestion(household: Household): IntervalSuggestion | null {
+  const { cat, settings } = household;
+  const current = intervalDays(cat.energy, settings.rotationIntervalDays);
+  const log = settings.swapLog ?? [];
+  const last = log.slice(-2);
+  if (last.length < 2) return null;
+  // Same-day swaps are more likely a mis-tap than a bored cat, so they don't count.
+  if (!last.every((e) => e.interval === current && e.daysOut >= 1 && e.daysOut < current)) return null;
+  const dismissed = settings.intervalPromptDismissedAt;
+  if (dismissed && last[1].at <= dismissed) return null;
+
+  const avg = (last[0].daysOut + last[1].daysOut) / 2;
+  const shorter = SWAP_OPTIONS.filter((d) => d < current);
+  if (!shorter.length) return null;
+  // Closest option to how long the baskets actually lasted.
+  const suggested = shorter.reduce((best, d) => (Math.abs(d - avg) < Math.abs(best - avg) ? d : best));
+  return { current, suggested, avgDaysOut: Math.round(avg * 10) / 10 };
 }
 
 export function applyRotation(toys: Toy[], fromId: string, toId: string, at: string) {

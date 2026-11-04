@@ -40,28 +40,8 @@ export type Toy = {
   status: ToyStatus;
   notes: string;
   createdAt: string;
-  lastUsedAt: string | null;
   restStartedAt: string | null;
-  totalPlayMs: number;
-  playCount: number;
-};
-
-export type Session = {
-  id: string;
-  catId: string;
-  toyId: string;
-  startedAt: string;
-  endedAt: string;
-  durationMs: number;
-  pounces: number;
-  timeToEngageSec: number | null;
-};
-
-export type LiveSession = {
-  toyId: string;
-  startedAt: string;
-  pounces: number;
-  firstEngageAt: string | null;
+  retiredAt?: string | null;
 };
 
 export type Settings = {
@@ -69,12 +49,12 @@ export type Settings = {
   rotationIntervalDays: number | null;
   remindersOn: boolean;
   lastRotationAt: string | null;
+  /** "New toy" nudge hidden until this date. */
+  newToySnoozedUntil?: string | null;
+  /** Recent swaps, newest last, to spot a pattern of swapping early. */
+  swapLog?: SwapLogEntry[];
+  /** "Swap sooner?" suggestion hidden until a new early swap after this time. */
+  intervalPromptDismissedAt?: string | null;
 };
 
-export type AlertKind = 'rotate' | 'play' | 'reintroduce' | 'retire';
-
-export type RotationAlert = {
-  kind: AlertKind;
-  title: string;
-  body: string;
-};
+export type SwapLogEntry = { at: string; daysOut: number; interval: number };

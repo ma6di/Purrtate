@@ -1,5 +1,5 @@
 import { daysBetween } from '@/lib/dates';
-import { PLAY_ROLES, roleOf } from '@/lib/presets';
+import { ENERGY_PRESETS, PLAY_ROLES, roleOf } from '@/lib/presets';
 import type { Household } from '@/lib/rotation';
 import type { PlayRole, ToyKind } from '@/types/models';
 
@@ -37,70 +37,141 @@ export type ToySuggestion = {
   body: string;
 };
 
-const MIN_PER_BASKET = 2;
+export const MIN_PER_BASKET = 2;
 
-/**
- * Should the owner add or buy toys? Rules, most urgent first:
- * thin baskets, missing hunt roles, laser as the only chaser,
- * retired toys not replaced, and a collection that has gone flat even after rest.
- */
-export function toySuggestions(household: Household, at = new Date()): ToySuggestion[] {
-  const { cat, groups, toys, sessions } = household;
+export type BasketIssue = {
+  id: string;
+  kind: 'thin' | 'missing';
+  text: string;
+  /** A toy in another basket that could move here instead of buying one. */
+  move?: { toyId: string; toyName: string; fromName: string };
+};
+
+/** Problems with one basket, each with a concrete fix. */
+export function basketIssues(household: Household, groupId: string): BasketIssue[] {
+  const { groups, toys } = household;
+  const group = groups.find((g) => g.id === groupId);
+  if (!group) return [];
   const live = toys.filter((t) => t.status !== 'retired');
-  const out: ToySuggestion[] = [];
+  const mine = live.filter((t) => t.groupId === groupId);
+  const issues: BasketIssue[] = [];
 
-  const thin = groups.filter((g) => live.filter((t) => t.groupId === g.id).length < MIN_PER_BASKET);
-  if (thin.length) {
-    const need = thin.reduce(
-      (n, g) => n + MIN_PER_BASKET - live.filter((t) => t.groupId === g.id).length,
-      0
-    );
-    out.push({
+  if (mine.length < MIN_PER_BASKET) {
+    const need = MIN_PER_BASKET - mine.length;
+    issues.push({
       id: 'thin',
-      kind: 'add',
-      title: thin.length === groups.length ? 'Fill the baskets' : `${thin.map((g) => g.name).join(' & ')} ${thin.length > 1 ? 'are' : 'is'} thin`,
-      body: `Rotation works best with at least ${MIN_PER_BASKET} toys per basket. Add ${need} more. Toys lost under the sofa count.`,
+      kind: 'thin',
+      text:
+        mine.length === 0
+          ? `${group.name} is empty, so the rotation skips it. Add at least ${MIN_PER_BASKET} toys.`
+          : `Only ${mine.length} toy here. Add ${need} more so this basket feels like a real change.`,
     });
   }
 
+  if (mine.length) {
+    for (const role of basketMix(mine.map((t) => t.kind)).missing) {
+      const meta = PLAY_ROLES.find((r) => r.role === role)!;
+      // Spare = a basket that has 2+ of this role, so moving one leaves it covered.
+      const spare = groups
+        .filter((g) => g.id !== groupId)
+        .map((g) => live.filter((t) => t.groupId === g.id && roleOf(t.kind) === role))
+        .find((list) => list.length >= 2)?.[0];
+      issues.push({
+        id: `missing-${role}`,
+        kind: 'missing',
+        text: spare
+          ? `No ${meta.label.toLowerCase()} toy. Move ${spare.name} here, or add a ${meta.example}.`
+          : `No ${meta.label.toLowerCase()} toy. Worth getting a ${meta.example}.`,
+        move: spare
+          ? {
+              toyId: spare.id,
+              toyName: spare.name,
+              fromName: groups.find((g) => g.id === spare.groupId)?.name ?? '',
+            }
+          : undefined,
+      });
+    }
+  }
+  return issues;
+}
+
+export function anyBasketIssues(household: Household) {
+  return household.groups.some((g) => basketIssues(household, g.id).length > 0);
+}
+
+export type NewToyNudge = { due: boolean; daysSince: number; every: number };
+
+/**
+ * Rotation slows habituation but doesn't stop it, so suggest a genuinely new toy
+ * every few weeks. Counts from the newest toy added, and respects "Not now".
+ */
+export function newToyNudge(household: Household, at = new Date()): NewToyNudge {
+  const { cat, toys, settings } = household;
+  const every = ENERGY_PRESETS[cat.energy].newToyDays;
+  const newest = toys.reduce<string | null>(
+    (latest, t) => (!latest || t.createdAt > latest ? t.createdAt : latest),
+    null
+  );
+  const daysSince = daysBetween(newest ?? cat.createdAt, at);
+  const snoozed = !!settings.newToySnoozedUntil && new Date(settings.newToySnoozedUntil) > at;
+  return { due: !snoozed && daysSince >= every, daysSince, every };
+}
+
+/**
+ * Collection-wide advice. Basket-level problems are shown on each basket instead.
+ */
+export function toySuggestions(household: Household, at = new Date()): ToySuggestion[] {
+  const { cat, groups, toys } = household;
+  const live = toys.filter((t) => t.status !== 'retired');
+  const out: ToySuggestion[] = [];
+
+  if (!live.length) {
+    out.push({
+      id: 'empty',
+      kind: 'add',
+      title: 'Add the toys you have',
+      body: `Start with what’s already in the house, around ${MIN_PER_BASKET * groups.length} toys. Even forgotten ones under the sofa feel new after a rest.`,
+    });
+    return out;
+  }
+
   const mix = basketMix(live.map((t) => t.kind));
-  if (live.length && mix.missing.includes('chase')) {
+  if (mix.missing.includes('chase')) {
     out.push({
       id: 'no-chase',
       kind: 'buy',
       title: 'Worth buying: a feather wand',
-      body: `Cats spend the most time playing when a person moves a feather wand. ${cat.name} has nothing to chase through the air yet.`,
+      body: `Cats play longest when a person moves a feather wand. ${cat.name} has nothing to chase through the air yet.`,
     });
   }
-  if (live.length && mix.missing.includes('stalk')) {
+  if (mix.missing.includes('stalk')) {
     out.push({
       id: 'no-stalk',
       kind: 'buy',
-      title: 'Worth buying: a small mouse or ball',
-      body: 'Small, furry, fast floor prey is what most cats stalk. These are cheap, and a few of them give every basket one.',
+      title: 'Worth buying: small mice or balls',
+      body: 'Small, fast floor prey is what most cats stalk. They’re cheap, and a pack gives every basket one.',
     });
   }
-  if (live.length && mix.missing.includes('grab')) {
+  if (mix.missing.includes('grab')) {
     out.push({
       id: 'no-grab',
       kind: 'buy',
       title: 'Worth buying: a kicker or food puzzle',
-      body: 'A kicker gives the end of the hunt (the grab-and-bunny-kick). A food puzzle turns meals into foraging. Both help on days you can’t play.',
+      body: 'A kicker is the end of the hunt (grab and bunny-kick). A food puzzle turns meals into foraging. Both work on days you can’t play.',
     });
   }
-  if (live.length && mix.hasLaserOnly) {
+  if (mix.hasLaserOnly) {
     out.push({
       id: 'laser',
       kind: 'safety',
       title: 'Give the laser a catch',
-      body: 'Laser-only chasing is linked to frustration and fixation on lights. Finish each laser session on a toy they can grab, or add a mouse.',
+      body: 'Laser-only chasing is linked to fixation on lights. End each laser session on a toy they can grab.',
     });
   }
 
-  // Retired in the last 30 days and its role is now thin.
-  const recentRetired = toys.filter(
-    (t) => t.status === 'retired' && daysBetween(t.lastUsedAt ?? t.createdAt, at) <= 30
-  );
+  const recentRetired = toys
+    .filter((t) => t.status === 'retired' && t.retiredAt && daysBetween(t.retiredAt, at) <= 30)
+    .sort((a, b) => (a.retiredAt! < b.retiredAt! ? 1 : -1));
   for (const r of recentRetired.slice(0, 1)) {
     const role = roleOf(r.kind);
     const left = live.filter((t) => roleOf(t.kind) === role).length;
@@ -110,24 +181,7 @@ export function toySuggestions(household: Household, at = new Date()): ToySugges
         id: `replace-${r.id}`,
         kind: 'buy',
         title: `Replace ${r.name}`,
-        body: `You’re down to ${left} ${label} toy${left === 1 ? '' : 's'} for ${groups.length} baskets. Pick a different texture or sound than before, so it’s actually new.`,
-      });
-    }
-  }
-
-  // Collection gone flat: plenty of recent play, but sessions are short across most toys.
-  const recent = sessions.filter((s) => daysBetween(s.endedAt, at) <= 14);
-  if (recent.length >= 8 && live.length >= 3) {
-    const byToy = new Map<string, number[]>();
-    for (const s of recent) byToy.set(s.toyId, [...(byToy.get(s.toyId) ?? []), s.durationMs]);
-    const avgs = [...byToy.values()].map((d) => d.reduce((a, b) => a + b, 0) / d.length);
-    const flat = avgs.filter((ms) => ms < 3 * 60_000).length;
-    if (byToy.size >= 3 && flat / byToy.size >= 0.6) {
-      out.push({
-        id: 'flat',
-        kind: 'refresh',
-        title: 'Time for something new',
-        body: `Most hunts in the last two weeks stopped under 3 minutes, even with rotation. A toy with a texture, sound or movement ${cat.name} hasn’t met yet is the best way to bring play back.`,
+        body: `You’re down to ${left} ${label} toy${left === 1 ? '' : 's'} for ${groups.length} baskets. Pick a new texture or sound, so it’s actually new.`,
       });
     }
   }

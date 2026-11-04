@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useCallback, useContext, useMemo, useRef } from 'react';
-import { Keyboard, Platform, ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
+import { Keyboard, ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors } from '@/theme';
@@ -79,15 +79,6 @@ export function Screen({
   );
 }
 
-export function PhoneFrame({ children }: { children: ReactNode }) {
-  if (Platform.OS !== 'web') return <>{children}</>;
-  return (
-    <View style={styles.webRoot}>
-      <View style={styles.phone}>{children}</View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
@@ -102,17 +93,5 @@ const styles = StyleSheet.create({
   scroll: {
     paddingBottom: 120,
     flexGrow: 1,
-  },
-  webRoot: {
-    flex: 1,
-    backgroundColor: '#1F1812',
-    alignItems: 'center',
-  },
-  phone: {
-    width: '100%',
-    maxWidth: 430,
-    flex: 1,
-    backgroundColor: colors.cream,
-    overflow: 'hidden',
   },
 });
